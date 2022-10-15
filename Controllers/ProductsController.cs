@@ -20,66 +20,106 @@ namespace CatalogAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> Get()
         {
-            var products = await _context.Products.ToListAsync();
-            if (products is null)
+            try
             {
-                return NotFound("Products not found.");
+                var products = await _context.Products.AsNoTracking().ToListAsync();
+                if (products is null)
+                {
+                    return NotFound("Products not found.");
+                }
+                return products;
             }
-            return products;
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         [HttpGet("{id}", Name = "GetProduct")]
         public async Task<ActionResult<Product>> GetById(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
-            if (product is null)
+            try
             {
-                return NotFound("Product not found.");
+                var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == id);
+                if (product is null)
+                {
+                    return NotFound("Product not found.");
+                }
+                return product;
             }
-            return product;
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         [HttpPost]
         public async Task<ActionResult> Post(Product product)
         {
-            if (product is null)
-                return BadRequest();
+            try
+            {
+                if (product is null)
+                    return BadRequest();
 
-            await _context.Products.AddAsync(product);
-            await _context.SaveChangesAsync();
+                await _context.Products.AddAsync(product);
+                await _context.SaveChangesAsync();
 
-            return new CreatedAtRouteResult("GetProduct",
-                new { id = product.ProductId }, product);
+                return new CreatedAtRouteResult("GetProduct",
+                    new { id = product.ProductId }, product);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> Put(int id, Product product)
         {
-            if (id != product.ProductId)
+            try
             {
-                return BadRequest();
+                if (id != product.ProductId)
+                {
+                    return BadRequest();
+                }
+
+                _context.Entry(product).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                return Ok(product);
             }
+            catch (Exception)
+            {
 
-            _context.Entry(product).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return Ok(product);
+                throw;
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
-
-            if (product is null)
+            try
             {
-                return NotFound("Product not found.");
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
+
+                if (product is null)
+                {
+                    return NotFound("Product not found.");
+                }
+
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+
+                return NoContent();
             }
+            catch (Exception)
+            {
 
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+                throw;
+            }
         }
     }
 }
