@@ -1,4 +1,6 @@
-﻿using CatalogAPI.Models;
+﻿using AutoMapper;
+using CatalogAPI.DTOs;
+using CatalogAPI.Models;
 using CatalogAPI.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,14 +11,16 @@ namespace CatalogAPI.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductRepository _productRepository;
+        private readonly IMapper _mapper;
 
-        public ProductsController(IProductRepository productRepository)
+        public ProductsController(IProductRepository productRepository, IMapper mapper)
         {
             _productRepository = productRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> Get()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> Get()
         {
             try
             {
@@ -25,7 +29,9 @@ namespace CatalogAPI.Controllers
                 {
                     return NotFound("Products not found.");
                 }
-                return Ok(products);
+
+                var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
+                return Ok(productsDto);
             }
             catch (Exception)
             {
@@ -35,7 +41,7 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpGet("{id}", Name = "GetProduct")]
-        public async Task<ActionResult<Product>> GetById(int id)
+        public async Task<ActionResult<ProductDTO>> GetById(int id)
         {
             try
             {
@@ -44,7 +50,9 @@ namespace CatalogAPI.Controllers
                 {
                     return NotFound("Product not found.");
                 }
-                return Ok(product);
+
+                var productDto = _mapper.Map<ProductDTO>(product);
+                return Ok(productDto);
             }
             catch (Exception)
             {
@@ -54,18 +62,21 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(Product product)
+        public async Task<ActionResult> Post(ProductDTO productDto)
         {
             try
             {
-                if (product is null)
+                if (productDto is null)
                 {
                     return BadRequest();
                 }
 
+                var product = _mapper.Map<Product>(productDto);
                 await _productRepository.AddAsync(product);
 
-                return CreatedAtRoute("GetProduct", new { id = product.ProductId }, product);
+                var productDTO = _mapper.Map<ProductDTO>(product);
+
+                return new CreatedAtRouteResult("GetProduct", new { id = product.ProductId }, productDTO);
             }
             catch (Exception)
             {
@@ -75,18 +86,19 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Put(int id, Product product)
+        public async Task<ActionResult> Put(int id, ProductDTO productDto)
         {
             try
             {
-                if (id != product.ProductId)
+                if (id != productDto.ProductId)
                 {
                     return BadRequest();
                 }
 
+                var product = _mapper.Map<Product>(productDto);
                 await _productRepository.UpdateAsync(product);
 
-                return Ok(product);
+                return Ok(productDto);
             }
             catch (Exception)
             {
@@ -109,7 +121,7 @@ namespace CatalogAPI.Controllers
 
                 await _productRepository.DeleteAsync(product);
 
-                return NoContent();
+                return Ok("Product deleted successfully.");
             }
             catch (Exception)
             {

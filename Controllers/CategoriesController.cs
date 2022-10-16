@@ -1,4 +1,6 @@
-﻿using CatalogAPI.Models;
+﻿using AutoMapper;
+using CatalogAPI.DTOs;
+using CatalogAPI.Models;
 using CatalogAPI.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,14 +11,16 @@ namespace CatalogAPI.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IMapper _mapper;
 
-        public CategoriesController(ICategoryRepository categoryRepository)
+        public CategoriesController(ICategoryRepository categoryRepository, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
+            _mapper = mapper;
         }
 
         [HttpGet("products")]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategoriesProducts()
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategoriesProducts()
         {
             try
             {
@@ -25,7 +29,9 @@ namespace CatalogAPI.Controllers
                 {
                     return NotFound("Categories not foud.");
                 }
-                return Ok(categories);
+
+                var categoriesDto = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
+                return Ok(categoriesDto);
             }
             catch (Exception)
             {
@@ -35,7 +41,7 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Category>>> Get()
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> Get()
         {
             try
             {
@@ -44,7 +50,9 @@ namespace CatalogAPI.Controllers
                 {
                     return NotFound("Categories not found");
                 }
-                return Ok(categories);
+
+                var categoriesDto = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
+                return Ok(categoriesDto);
             }
             catch (Exception)
             {
@@ -54,7 +62,7 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpGet("{id}", Name = "GetCategory")]
-        public async Task<ActionResult<Category>> GetById(int id)
+        public async Task<ActionResult<CategoryDTO>> GetById(int id)
         {
             try
             {
@@ -63,7 +71,9 @@ namespace CatalogAPI.Controllers
                 {
                     return NotFound("Category not found");
                 }
-                return Ok(category);
+
+                var categoryDto = _mapper.Map<CategoryDTO>(category);
+                return Ok(categoryDto);
             }
             catch (Exception)
             {
@@ -73,17 +83,22 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(Category category)
+        public async Task<ActionResult> Post(CategoryDTO categoryDto)
         {
             try
             {
-                if (category is null)
+                if (categoryDto is null)
+                {
                     return BadRequest();
+                }
 
+                var category = _mapper.Map<Category>(categoryDto);
                 await _categoryRepository.AddAsync(category);
 
+                var categoryDTO = _mapper.Map<CategoryDTO>(category);
+
                 return new CreatedAtRouteResult("GetCategory",
-                    new { id = category.CategoryId }, category);
+                    new { id = category.CategoryId }, categoryDTO);
             }
             catch (Exception)
             {
@@ -93,18 +108,19 @@ namespace CatalogAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Put(int id, Category category)
+        public async Task<ActionResult> Put(int id, CategoryDTO categoryDto)
         {
             try
             {
-                if (id != category.CategoryId)
+                if (id != categoryDto.CategoryId)
                 {
                     return BadRequest();
                 }
 
+                var category = _mapper.Map<Category>(categoryDto);
                 await _categoryRepository.UpdateAsync(category);
 
-                return Ok(category);
+                return Ok(categoryDto);
             }
             catch (Exception)
             {
@@ -126,7 +142,7 @@ namespace CatalogAPI.Controllers
 
                 await _categoryRepository.DeleteAsync(category);
 
-                return NoContent();
+                return Ok("Category deleted successfully.");
             }
             catch (Exception)
             {
