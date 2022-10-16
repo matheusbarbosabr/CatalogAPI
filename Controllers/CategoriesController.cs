@@ -1,8 +1,6 @@
-﻿using CatalogAPI.Data;
-using CatalogAPI.Models;
-using Microsoft.AspNetCore.Http;
+﻿using CatalogAPI.Models;
+using CatalogAPI.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CatalogAPI.Controllers
 {
@@ -10,11 +8,11 @@ namespace CatalogAPI.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CategoriesController(AppDbContext context)
+        public CategoriesController(ICategoryRepository categoryRepository)
         {
-            _context = context;
+            _categoryRepository = categoryRepository;
         }
 
         [HttpGet("products")]
@@ -22,7 +20,7 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var categories = await _context.Categories.Include(p => p.Products).AsNoTracking().ToListAsync();
+                var categories = await _categoryRepository.GetCategoriesProductsAsync();
                 if (categories is null)
                 {
                     return NotFound("Categories not foud.");
@@ -41,7 +39,7 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var categories = await _context.Categories.AsNoTracking().ToListAsync();
+                var categories = await _categoryRepository.GetAsync();
                 if (categories is null)
                 {
                     return NotFound("Categories not found");
@@ -60,7 +58,7 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var category = await _context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.CategoryId == id);
+                var category = await _categoryRepository.GetByIdAsync(c => c.CategoryId == id);
                 if (category is null)
                 {
                     return NotFound("Category not found");
@@ -82,8 +80,7 @@ namespace CatalogAPI.Controllers
                 if (category is null)
                     return BadRequest();
 
-                await _context.Categories.AddAsync(category);
-                await _context.SaveChangesAsync();
+                await _categoryRepository.AddAsync(category);
 
                 return new CreatedAtRouteResult("GetCategory",
                     new { id = category.CategoryId }, category);
@@ -105,8 +102,7 @@ namespace CatalogAPI.Controllers
                     return BadRequest();
                 }
 
-                _context.Entry(category).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
+                await _categoryRepository.UpdateAsync(category);
 
                 return Ok(category);
             }
@@ -122,14 +118,13 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryId == id);
+                var category = await _categoryRepository.GetByIdAsync(c => c.CategoryId == id);
                 if (category is null)
                 {
                     return NotFound("Category not found");
                 }
 
-                _context.Categories.Remove(category);
-                await _context.SaveChangesAsync();
+                await _categoryRepository.DeleteAsync(category);
 
                 return NoContent();
             }

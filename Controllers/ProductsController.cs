@@ -1,8 +1,6 @@
-﻿using CatalogAPI.Data;
-using CatalogAPI.Models;
-using Microsoft.AspNetCore.Http;
+﻿using CatalogAPI.Models;
+using CatalogAPI.Repositories.Abstractions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CatalogAPI.Controllers
 {
@@ -10,11 +8,11 @@ namespace CatalogAPI.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IProductRepository _productRepository;
 
-        public ProductsController(AppDbContext context)
+        public ProductsController(IProductRepository productRepository)
         {
-            _context = context;
+            _productRepository = productRepository;
         }
 
         [HttpGet]
@@ -22,12 +20,12 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var products = await _context.Products.AsNoTracking().ToListAsync();
+                var products = await _productRepository.GetAsync();
                 if (products is null)
                 {
                     return NotFound("Products not found.");
                 }
-                return products;
+                return Ok(products);
             }
             catch (Exception)
             {
@@ -41,12 +39,12 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == id);
+                var product = await _productRepository.GetByIdAsync(p => p.ProductId == id);
                 if (product is null)
                 {
                     return NotFound("Product not found.");
                 }
-                return product;
+                return Ok(product);
             }
             catch (Exception)
             {
@@ -61,13 +59,13 @@ namespace CatalogAPI.Controllers
             try
             {
                 if (product is null)
+                {
                     return BadRequest();
+                }
 
-                await _context.Products.AddAsync(product);
-                await _context.SaveChangesAsync();
+                await _productRepository.AddAsync(product);
 
-                return new CreatedAtRouteResult("GetProduct",
-                    new { id = product.ProductId }, product);
+                return CreatedAtRoute("GetProduct", new { id = product.ProductId }, product);
             }
             catch (Exception)
             {
@@ -86,8 +84,7 @@ namespace CatalogAPI.Controllers
                     return BadRequest();
                 }
 
-                _context.Entry(product).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
+                await _productRepository.UpdateAsync(product);
 
                 return Ok(product);
             }
@@ -103,15 +100,14 @@ namespace CatalogAPI.Controllers
         {
             try
             {
-                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
+                var product = await _productRepository.GetByIdAsync(p => p.ProductId == id);
 
                 if (product is null)
                 {
                     return NotFound("Product not found.");
                 }
 
-                _context.Products.Remove(product);
-                await _context.SaveChangesAsync();
+                await _productRepository.DeleteAsync(product);
 
                 return NoContent();
             }
