@@ -5,6 +5,7 @@ namespace CatalogAPI.Repositories.Abstractions
 {
     public interface ICategoryRepository : IRepository<Category>
     {
-        Task<IEnumerable<Category>> GetCategoriesProductsAsync();
+        Task<IEnumerable<Category>> GetCategoriesProductsAsync(int skipAmount, int takeAmount);
+        Task<int> CountCategoriesProductsAsync();
     }
 }

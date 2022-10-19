@@ -19,19 +19,34 @@ namespace CatalogAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("products")]
-        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategoriesProducts()
+
+        [HttpGet("products/skip/{skip:int}/take/{take:int}")]
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategoriesProducts([FromRoute] int skip = 0, [FromRoute] int take = 25)
         {
             try
             {
-                var categories = await _categoryRepository.GetCategoriesProductsAsync();
+                if (take > 25)
+                {
+                    return BadRequest("Sorry, it's not possible to retrieve more than 25 results at a time.");
+                }
+
+                var total = await _categoryRepository.CountCategoriesProductsAsync();
+                var categories = await _categoryRepository.GetCategoriesProductsAsync(skip, take);
+
                 if (categories is null)
                 {
                     return NotFound("Categories not foud.");
                 }
 
                 var categoriesDto = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
-                return Ok(categoriesDto);
+
+                return Ok(new
+                {
+                    total,
+                    skip,
+                    take,
+                    data = categoriesDto
+                });
             }
             catch (Exception)
             {
@@ -40,19 +55,33 @@ namespace CatalogAPI.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDTO>>> Get()
+        [HttpGet("skip/{skip:int}/take/{take:int}")]
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> Get([FromRoute] int skip = 0, [FromRoute] int take = 25)
         {
             try
             {
-                var categories = await _categoryRepository.GetAsync();
+                if (take > 25)
+                {
+                    return BadRequest("Sorry, it's not possible to retrieve more than 25 results at a time.");
+                }
+
+                var total = await _categoryRepository.CountItemsAsync();
+                var categories = await _categoryRepository.GetAsync(skip, take);
+
                 if (categories is null)
                 {
                     return NotFound("Categories not found");
                 }
 
                 var categoriesDto = _mapper.Map<IEnumerable<CategoryDTO>>(categories);
-                return Ok(categoriesDto);
+
+                return Ok(new
+                {
+                    total,
+                    skip,
+                    take,
+                    data = categoriesDto
+                });
             }
             catch (Exception)
             {

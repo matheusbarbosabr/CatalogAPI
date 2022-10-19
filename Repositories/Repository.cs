@@ -1,5 +1,6 @@
 ﻿using CatalogAPI.Data;
 using CatalogAPI.Repositories.Abstractions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -14,9 +15,18 @@ namespace CatalogAPI.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<T>> GetAsync()
+        public async Task<IEnumerable<T>> GetAsync(int skipAmount, int takeAmount)
         {
-            return await _context.Set<T>().AsNoTracking().ToListAsync();
+            return await _context.Set<T>()
+                .AsNoTracking()
+                .Skip(skipAmount)
+                .Take(takeAmount)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountItemsAsync()
+        {
+            return await _context.Set<T>().CountAsync();
         }
 
         public async Task<T> GetByIdAsync(Expression<Func<T, bool>> predicate)

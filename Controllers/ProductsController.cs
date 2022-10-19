@@ -19,19 +19,33 @@ namespace CatalogAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductDTO>>> Get()
+        [HttpGet("skip/{skip:int}/take/{take:int}")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> Get([FromRoute] int skip = 0, [FromRoute] int take = 25)
         {
             try
             {
-                var products = await _productRepository.GetAsync();
+                if (take > 25)
+                {
+                    return BadRequest("Sorry, it's not possible to retrieve more than 25 results at a time.");
+                }
+
+                var total = await _productRepository.CountItemsAsync();
+                var products = await _productRepository.GetAsync(skip, take);
+
                 if (products is null)
                 {
                     return NotFound("Products not found.");
                 }
 
                 var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
-                return Ok(productsDto);
+
+                return Ok(new
+                {
+                    total,
+                    skip,
+                    take,
+                    data = productsDto
+                });
             }
             catch (Exception)
             {

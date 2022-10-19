@@ -11,9 +11,18 @@ namespace CatalogAPI.Repositories
         {
         }
 
-        public async Task<IEnumerable<Category>> GetCategoriesProductsAsync()
+        public async Task<IEnumerable<Category>> GetCategoriesProductsAsync(int skipAmount, int takeAmount)
         {
-            return await _context.Categories.Include(p => p.Products).AsNoTracking().ToListAsync();
+            return await _context.Categories.Include(p => p.Products)
+                .AsNoTracking()
+                .Skip(skipAmount)
+                .Take(takeAmount)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountCategoriesProductsAsync()
+        {
+            return await _context.Categories.Include(p => p.Products).CountAsync();
         }
     }
 }
