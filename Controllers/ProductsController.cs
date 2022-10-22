@@ -2,10 +2,12 @@
 using CatalogAPI.DTOs;
 using CatalogAPI.Models;
 using CatalogAPI.Repositories.Abstractions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatalogAPI.Controllers
 {
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/v1/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
