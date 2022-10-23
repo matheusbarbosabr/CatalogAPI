@@ -99,6 +99,10 @@ IMapper mapper = mappingConfig.CreateMapper();
 
 builder.Services.AddSingleton(mapper);
 
+// Enable CORS
+
+builder.Services.AddCors();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -113,6 +117,10 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseCors(options => options.AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 app.MapControllers();
 
